@@ -19,7 +19,7 @@ import org.rosuda.REngine.Rserve.RConnection;
     <p>
     @version $Id$
 */
-public class RTalk {
+public class RTalk extends Observable {
     public static final int DT_INT=1;
     public static final int DT_CHAR=2;
     public static final int DT_DOUBLE=3;
@@ -43,7 +43,7 @@ public class RTalk {
     public static final int CMD_removeFile=0x015;
     public static final int CMD_setSEXP=0x020;
     public static final int CMD_assignSEXP=0x021;
-    
+
     public static final int CMD_setBufferSize=0x081;
     public static final int CMD_setEncoding=0x082;
 
@@ -54,8 +54,8 @@ public class RTalk {
     // control commands since 0.6-0
     public static final int CMD_ctrlEval=0x42;
     public static final int CMD_ctrlSource=0x45;
-    public static final int CMD_ctrlShutdown=0x44; 
-    
+    public static final int CMD_ctrlShutdown=0x44;
+
     // errors as returned by Rserve
     public static final int ERR_auth_failed=0x41;
     public static final int ERR_conn_broken=0x42;
@@ -73,10 +73,10 @@ public class RTalk {
     public static final int ERR_ctrl_closed=0x4e;
     public static final int ERR_session_busy=0x50;
     public static final int ERR_detach_failed=0x51;
-   
+
     InputStream is;
     OutputStream os;
-    
+
     /** constructor; parameters specify the streams
 	@param sis socket input stream
 	@param sos socket output stream */
@@ -119,13 +119,13 @@ public class RTalk {
 
     /** creates a new header according to the type and length of the parameter
         @param ty type/cmd/resp byte
-        @param len length */        
+        @param len length */
     public static byte[] newHdr(int ty, int len) {
         byte[] hdr=new byte[(len>0xfffff0)?8:4];
         setHdr(ty,len,hdr,0);
         return hdr;
     }
-    
+
     /** converts bit-wise stored int in Intel-endian form into Java int
 	@param buf buffer containg the representation
 	@param o offset where to start (4 bytes will be used)
@@ -209,28 +209,41 @@ public class RTalk {
 		    os.write(cont,offset,len);
 	    }
 
-	    byte[] ih=new byte[16];
-	    if (is.read(ih)!=16)
-		return null;
-	    int rep=getInt(ih,0);
-	    int rl =getInt(ih,4);
-	    if (rl>0) {
-		byte[] ct=new byte[rl];
-                int n=0;
-                while (n<rl) {
-                    int rd=is.read(ct,n,rl-n);
-                    n+=rd;
-                }
-		return new RPacket(rep,ct);
-	    }
-	    return new RPacket(rep,null);
+	    RPacket packet = null;
+	    do {
+		    byte[] ih=new byte[16];
+		    if (is.read(ih)!=16)
+			return null;
+		    int rep=getInt(ih,0);
+		    int rl =getInt(ih,4);
+		    if (rl>0) {
+			byte[] ct=new byte[rl];
+	                int n=0;
+	                while (n<rl) {
+	                    int rd=is.read(ct,n,rl-n);
+	                    n+=rd;
+	                }
+	    		    packet = new RPacket(rep, ct);
+		    } else {
+			    packet = new RPacket(rep, null);
+		    }
+		    if (packet.isOutOfBand()) {
+		    	notifyOutOfBand(packet);
+		    }
+	    } while (packet.isOutOfBand());
+	    return packet;
 	} catch(Exception e) {
 	    e.printStackTrace();
 	    return null;
 	}
     }
 
-    /** sends a request with one string parameter attached
+    private void notifyOutOfBand(RPacket packet) {
+    	setChanged();
+    	notifyObservers(packet);
+	}
+
+	/** sends a request with one string parameter attached
 	@param cmd command
 	@param par parameter - length and DT_STRING will be prepended
 	@return returned packet or <code>null</code> if something went wrong */

@@ -4,11 +4,27 @@ package org.rosuda.REngine.Rserve;
 // Copyright (C) 2004-08 Simon Urbanek
 // --- for licensing information see LICENSE file in the original JRclient distribution ---
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import org.rosuda.REngine.*;
-import org.rosuda.REngine.Rserve.protocol.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+
+import org.rosuda.REngine.REXP;
+import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.REXPNull;
+import org.rosuda.REngine.REngine;
+import org.rosuda.REngine.REngineException;
+import org.rosuda.REngine.Rserve.protocol.REXPFactory;
+import org.rosuda.REngine.Rserve.protocol.RPacket;
+import org.rosuda.REngine.Rserve.protocol.RTalk;
+import org.rosuda.REngine.Rserve.protocol.jcrypt;
 
 /**  class providing TCP/IP connection to an Rserve
      @version $Id$
@@ -28,9 +44,28 @@ public class RConnection extends REngine {
     String host;
     int port;
 
+    Set oobCallbacks;
+
+
+    private class OOBObserver implements Observer {
+    	public void update(Observable o, Object arg) {
+    		REXP msg;
+    		msg = parseEvalResponse((RPacket) arg);
+
+    		for (Iterator i = oobCallbacks.iterator(); i.hasNext(); ) {
+    			OutOfBandCallback cb = (OutOfBandCallback) i.next();
+    			cb.update(msg);
+    		}
+    	}
+    }
+
+    public interface OutOfBandCallback {
+    	public void update(REXP msg);
+    }
+
     /** This static variable specifies the character set used to encode string for transfer. Under normal circumstances there should be no reason for changing this variable. The default is UTF-8, which makes sure that 7-bit ASCII characters are sent in a backward-compatible fashion. Currently (Rserve 0.1-7) there is no further conversion on Rserve's side, i.e. the strings are passed to R without re-coding. If necessary the setting should be changed <u>before</u> connecting to the Rserve in case later Rserves will provide a possibility of setting the encoding during the handshake. */
     public static String transferCharset="UTF-8";
-    
+
     /** authorization type: plain text */
     public static final int AT_plain = 0;
     /** authorization type: unix crypt */
@@ -38,7 +73,7 @@ public class RConnection extends REngine {
 
     /** version of the server (as reported in IDstring just after Rsrv) */
     protected int rsrvVersion;
-    
+
     /** make a new local connection on default port (6311) */
     public RConnection() throws RserveException {
 		this("127.0.0.1",6311);
@@ -94,6 +129,8 @@ public class RConnection extends REngine {
             throw new RserveException(this,"Cannot get io stream: "+gse.getMessage());
         }
         rt=new RTalk(is,os);
+        oobCallbacks = new HashSet();
+        rt.addObserver(new OOBObserver());
 		if (session==null) {
 			byte[] IDs=new byte[32];
 			int n=-1;
@@ -147,8 +184,16 @@ public class RConnection extends REngine {
 		}
 		connected=true;
 		lastError="OK";
-    }    
-	
+    }
+
+    public boolean addOutOfBandCallback(OutOfBandCallback cb) {
+    	return oobCallbacks.add(cb);
+    }
+
+    public boolean removeOutOfBandCallback(OutOfBandCallback cb) {
+    	return oobCallbacks.remove(cb);
+    }
+
     public void finalize() {
         close();
         is=null;
@@ -160,7 +205,7 @@ public class RConnection extends REngine {
     public int getServerVersion() {
         return rsrvVersion;
     }
-    
+
     /** closes current connection */
     public boolean close() {
         try {
@@ -170,7 +215,7 @@ public class RConnection extends REngine {
         } catch(Exception e) { };
 		return false;
     }
-    
+
     /** evaluates the given command, but does not fetch the result (useful for assignment
 	operations)
 	@param cmd command/expression string */
@@ -196,7 +241,7 @@ public class RConnection extends REngine {
 		close();
 		return s;
     }
-	
+
     REXP parseEvalResponse(RPacket rp) throws RserveException {
 		int rxo=0;
 		byte[] pc=rp.getCont();
@@ -332,7 +377,7 @@ public void assign(String sym, REXP rexp) throws RserveException {
 
         RPacket rp=rt.request(RTalk.CMD_setBufferSize,(int)sbs);
         if (rp!=null && rp.isOk()) return;
-        throw new RserveException(this,"setSendBufferSize failed",rp);        
+        throw new RserveException(this,"setSendBufferSize failed",rp);
     }
 
     /** set string encoding for this session. It is strongly
@@ -378,7 +423,7 @@ public void assign(String sym, REXP rexp) throws RserveException {
         throw new RserveException(this,"login failed",rp);
     }
 
-    
+
     /** detaches the session and closes the connection (requires Rserve 0.4+). The session can be only resumed by calling @link{RSession.attach} */
 	public RSession detach() throws RserveException {
 		if (!connected || rt==null)
@@ -396,18 +441,18 @@ public void assign(String sym, REXP rexp) throws RserveException {
 	the flag
 	@return <code>true</code> if this connection is alive */
     public boolean isConnected() { return connected; }
-    
+
     /** check authentication requirement sent by server
 	@return <code>true</code> is server requires authentication. In such case first
 	command after connecting must be {@link #login}. */
     public boolean needLogin() { return authReq; }
-    
+
     /** get last error string
 	@return last error string */
     public String getLastError() { return lastError; }
-	
+
     /** evaluates the given command in the master server process asynchronously (control command). Note that control commands are always asynchronous, i.e., the expression is enqueued for evaluation in the master process and the method returns before the expression is evaluated (in non-parallel builds the client has to close the connection before the expression can be evaluated). There is no way to check for errors and control commands should be sent with utmost care as they can abort the server process. The evaluation has no immediate effect on the client session.
-     *  @param cmd command/expression string 
+     *  @param cmd command/expression string
      *  @since Rserve 0.6-0 */
     public void serverEval(String cmd) throws RserveException {
 	if (!connected || rt == null)
@@ -416,7 +461,7 @@ public void assign(String sym, REXP rexp) throws RserveException {
 	if (rp != null && rp.isOk()) return;
 	throw new RserveException(this,"serverEval failed",rp);
     }
-    
+
     /** sources the given file (the path must be local to the server!) in the master server process asynchronously (control command). See {@link #serverEval()} for details on control commands.
      *  @param serverFile path to a file on the server (it is recommended to always use full paths, because the server process has a different working directory than the client child process!).
      *  @since Rserve 0.6-0 */
@@ -427,7 +472,7 @@ public void assign(String sym, REXP rexp) throws RserveException {
 	if (rp != null && rp.isOk()) return;
 	throw new RserveException(this,"serverSource failed",rp);
     }
-    
+
     /** attempt to shut down the server process cleanly. Note that there is a fundamental difference between the {@link shutdown()} method and this method: <code>serverShutdown()</code> is a proper control command and thus fully authentication controllable, whereas {@link shutdown()} is a client-side command sent to the client child process and thus relying on the ability of the client to signal the server process which may be disabled. Therefore <code>serverShutdown()</code> is preferred and more reliable for Rserve 0.6-0 and higher.
      *  @since Rserve 0.6-0 */
     public void serverShutdown() throws RserveException {
@@ -437,7 +482,7 @@ public void assign(String sym, REXP rexp) throws RserveException {
 	if (rp != null && rp.isOk()) return;
 	throw new RserveException(this,"serverShutdown failed",rp);
     }
-    
+
 //========= REngine interface API
 
 public REXP parse(String text, boolean resolve) throws REngineException {
@@ -471,7 +516,7 @@ public void assign(String symbol, REXP value, REXP env) throws REngineException 
 /** get a value from an environment
 @param symbol symbol name
 @param env environment
-@param resolve resolve the resulting REXP or just return a reference		
+@param resolve resolve the resulting REXP or just return a reference
 @return value */
 public REXP get(String symbol, REXP env, boolean resolve) throws REngineException {
 	if (!resolve) throw new REngineException(this, "Rserve doesn't support references");
@@ -488,14 +533,14 @@ public REXP get(String symbol, REXP env, boolean resolve) throws REngineExceptio
 public REXP resolveReference(REXP ref) throws REngineException {
 	throw new REngineException(this, "Rserve doesn't support references");
 }
-	
+
 	public REXP createReference(REXP ref) throws REngineException {
 		throw new REngineException(this, "Rserve doesn't support references");
 	}
 	public void finalizeReference(REXP ref) throws REngineException {
 		throw new REngineException(this, "Rserve doesn't support references");
 	}
-	
+
 public REXP getParentEnvironment(REXP env, boolean resolve) throws REngineException {
 	throw new REngineException(this, "Rserve doesn't support environments other than .GlobalEnv");
 }

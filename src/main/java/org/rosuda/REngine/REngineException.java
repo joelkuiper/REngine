@@ -13,7 +13,7 @@
 package org.rosuda.REngine;
 
 /** <code>REngineException</code> is a generic exception that can be thrown by methods invoked on an R engine. */
-public class REngineException extends Exception {
+public class REngineException extends RuntimeException {
 	/** engine associated with this exception */
     protected REngine engine;
 
@@ -24,7 +24,7 @@ public class REngineException extends Exception {
         super(msg);
         this.engine = engine;
     }
- 
+
 	/** returns the engine associated with this exception
 	 @return engine associated with this exception */
 	public REngine getEngine() { return engine; }
