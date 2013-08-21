@@ -25,14 +25,13 @@ public class REXPReference extends REXP {
 
 	/** resolve the external REXP reference into an actual REXP object. In addition, the value (if not <code>null</code>) will be cached for subsequent calls to <code>resolve</code> until <code>invalidate</code> is called. */
 	public REXP resolve() {
-		if (resolvedValue != null)
-			return resolvedValue;
+		if (resolvedValue != null) { return resolvedValue; }
 		try {
 			resolvedValue = eng.resolveReference(this);
 			return resolvedValue;
 		} catch (REXPMismatchException me) {
 			// this should never happen since we are REXPReference
-		} catch(REngineException ee) {
+		} catch (REngineException ee) {
 			// FIXME: what to we do?
 		}
 		return null;
@@ -42,7 +41,7 @@ public class REXPReference extends REXP {
 	public void invalidate() {
 		resolvedValue = null;
 	}
-	
+
 	/** finalization that notifies the engine when a reference gets collected */
 	protected void finalize() throws Throwable {
 		try {
@@ -50,40 +49,107 @@ public class REXPReference extends REXP {
 		} finally {
 			super.finalize();
 		}
-	}	
+	}
+
 	// type checks
-	public boolean isString() { return resolve().isString(); }
-	public boolean isNumeric() { return resolve().isNumeric(); }
-	public boolean isInteger() { return resolve().isInteger(); }
-	public boolean isNull() { return resolve().isNull(); }
-	public boolean isFactor() { return resolve().isFactor(); }
-	public boolean isList() { return resolve().isList(); }
-	public boolean isLogical() { return resolve().isLogical(); }
-	public boolean isEnvironment() { return resolve().isEnvironment(); }
-	public boolean isLanguage() { return resolve().isLanguage(); }
-	public boolean isSymbol() { return resolve().isSymbol(); }
-	public boolean isVector() { return resolve().isVector(); }
-	public boolean isRaw() { return resolve().isRaw(); }
-	public boolean isComplex() { return resolve().isComplex(); }
-	public boolean isRecursive() { return resolve().isRecursive(); }
-	public boolean isReference() { return true; }
+	public boolean isString() {
+		return resolve().isString();
+	}
+
+	public boolean isNumeric() {
+		return resolve().isNumeric();
+	}
+
+	public boolean isInteger() {
+		return resolve().isInteger();
+	}
+
+	public boolean isNull() {
+		return resolve().isNull();
+	}
+
+	public boolean isFactor() {
+		return resolve().isFactor();
+	}
+
+	public boolean isList() {
+		return resolve().isList();
+	}
+
+	public boolean isLogical() {
+		return resolve().isLogical();
+	}
+
+	public boolean isEnvironment() {
+		return resolve().isEnvironment();
+	}
+
+	public boolean isLanguage() {
+		return resolve().isLanguage();
+	}
+
+	public boolean isSymbol() {
+		return resolve().isSymbol();
+	}
+
+	public boolean isVector() {
+		return resolve().isVector();
+	}
+
+	public boolean isRaw() {
+		return resolve().isRaw();
+	}
+
+	public boolean isComplex() {
+		return resolve().isComplex();
+	}
+
+	public boolean isRecursive() {
+		return resolve().isRecursive();
+	}
+
+	public boolean isReference() {
+		return true;
+	}
 
 	// basic accessor methods
-	public String[] asStrings() throws REXPMismatchException { return resolve().asStrings(); }
-	public int[] asIntegers() throws REXPMismatchException { return resolve().asIntegers(); }
-	public double[] asDoubles() throws REXPMismatchException { return resolve().asDoubles(); }
-	public RList asList() throws REXPMismatchException { return resolve().asList(); }
-	public RFactor asFactor() throws REXPMismatchException { return resolve().asFactor(); }
+	public String[] asStrings() throws REXPMismatchException {
+		return resolve().asStrings();
+	}
 
-	public int length() throws REXPMismatchException { return resolve().length(); }
+	public int[] asIntegers() throws REXPMismatchException {
+		return resolve().asIntegers();
+	}
 
-	public REXPList _attr() { return resolve()._attr(); }
-	
-	public Object getHandle() { return handle; }
-	
-	public REngine getEngine() { return eng; }
+	public double[] asDoubles() throws REXPMismatchException {
+		return resolve().asDoubles();
+	}
+
+	public RList asList() throws REXPMismatchException {
+		return resolve().asList();
+	}
+
+	public RFactor asFactor() throws REXPMismatchException {
+		return resolve().asFactor();
+	}
+
+	public int length() throws REXPMismatchException {
+		return resolve().length();
+	}
+
+	public REXPList _attr() {
+		return resolve()._attr();
+	}
+
+	public Object getHandle() {
+		return handle;
+	}
+
+	public REngine getEngine() {
+		return eng;
+	}
 
 	public String toString() {
-		return super.toString()+"{eng="+eng+",h="+handle+"}";
+		return super.toString() + "{eng=" + eng + ",h=" + handle + "}";
 	}
 }

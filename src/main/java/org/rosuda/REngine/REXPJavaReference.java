@@ -7,19 +7,29 @@ public class REXPJavaReference extends REXP {
 
 	/** creates a new Java reference R object
 	 *  @param o Java object referenced by the REXP */
-	public REXPJavaReference(Object o) { super(); this.object = o; }
+	public REXPJavaReference(Object o) {
+		super();
+		object = o;
+	}
 
 	/** creates a new Java reference R object
 	 *  @param o Java object referenced by the REXP
 	 *  @param attr attributes (of the R wrapper) */
-	public REXPJavaReference(Object o, REXPList attr) { super(attr); this.object = o; }
-	
+	public REXPJavaReference(Object o, REXPList attr) {
+		super(attr);
+		object = o;
+	}
+
 	/** returns the Java object referenced by this REXP
 	 *  @return Java object */
-	public Object getObject() { return object; }
+	public Object getObject() {
+		return object;
+	}
 
- 	public Object asNativeJavaObject() { return object; }
-	
+	public Object asNativeJavaObject() {
+		return object;
+	}
+
 	public String toString() {
 		return super.toString() + "[" + object + "]";
 	}

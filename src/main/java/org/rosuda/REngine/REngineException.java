@@ -14,18 +14,21 @@ package org.rosuda.REngine;
 
 /** <code>REngineException</code> is a generic exception that can be thrown by methods invoked on an R engine. */
 public class REngineException extends RuntimeException {
+	private static final long serialVersionUID = 6802130027310241430L;
 	/** engine associated with this exception */
-    protected REngine engine;
+	protected REngine engine;
 
 	/** creates an R engine exception
 	 @param engine engine associated with this exception
 	 @param msg message describing the cause */
-    public REngineException(REngine engine, String msg) {
-        super(msg);
-        this.engine = engine;
-    }
+	public REngineException(REngine engine, String msg) {
+		super(msg);
+		this.engine = engine;
+	}
 
 	/** returns the engine associated with this exception
 	 @return engine associated with this exception */
-	public REngine getEngine() { return engine; }
+	public REngine getEngine() {
+		return engine;
+	}
 }

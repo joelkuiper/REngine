@@ -1,7 +1,7 @@
-package org.rosuda.REngine ;
+package org.rosuda.REngine;
 
 /**
- * Exception thrown when an error occurs during eval. 
+ * Exception thrown when an error occurs during eval.
  * 
  * <p>
  * This class is a placeholder and should be extended when more information
@@ -9,24 +9,26 @@ package org.rosuda.REngine ;
  * </p>
  */
 public class REngineEvalException extends REngineException {
-	
+
+	private static final long serialVersionUID = -5924596791784308318L;
+
 	/**
 	 * Value returned by the rniEval native method when the input passed to eval
 	 * is invalid
-	 */ 
-	public static final int INVALID_INPUT = -1 ;
-	
+	 */
+	public static final int INVALID_INPUT = -1;
+
 	/**
-	 * Value returned by the rniEval native method when an error occured during 
+	 * Value returned by the rniEval native method when an error occured during
 	 * eval (stop, ...)
 	 */
-	public static final int ERROR = -2 ;  
+	public static final int ERROR = -2;
 
 	/**
 	 * Type of eval error
 	 */
-	protected int type ; 
-	
+	protected int type;
+
 	/**
 	 * Constructor
 	 *
@@ -34,26 +36,26 @@ public class REngineEvalException extends REngineException {
 	 * @param message error message
 	 * @param type type of error (ERROR or INVALID_INPUT)
 	 */
-	public REngineEvalException( REngine eng, String message, int type ){
-		super( eng, message );
-		this.type = type ;
+	public REngineEvalException(REngine eng, String message, int type) {
+		super(eng, message);
+		this.type = type;
 	}
-	
+
 	/**
 	 * Constructor using ERROR type
 	 *
 	 * @param eng associated REngine
 	 * @param message error message
 	 */
-	public REngineEvalException( REngine eng, String message){
-		this( eng, message, ERROR );
+	public REngineEvalException(REngine eng, String message) {
+		this(eng, message, ERROR);
 	}
-	
+
 	/**
 	 * @return the type of error (ERROR or INVALID_INPUT)
 	 */
-	public int getType(){
-		return type ;
+	public int getType() {
+		return type;
 	}
-	
+
 }
