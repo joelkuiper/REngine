@@ -9,8 +9,44 @@
   <url>http://maven.apache.org</url>
   <dependencies>
   </dependencies>
+
+  <distributionManagement>
+    <repository>
+      <uniqueVersion>true</uniqueVersion>
+      <id>ssh-drugis.org</id>
+      <name>drugis.org repository</name>
+      <url>scpexe://drugis.org/var/www/drugis.org/mvn</url>
+      <layout>default</layout>
+    </repository>
+  </distributionManagement>
+
   <build>
     <plugins>
+      <!-- attach source to release -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- attach javadoc to release -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
